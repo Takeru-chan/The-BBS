@@ -13,13 +13,6 @@ li { margin-bottom:1em; }
 textarea { width:100%; height:10em;font-size:medium;padding:1em; }
 .selector-for-some-widget { box-sizing: content-box; }
 </style>
-<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-<script>
-     (adsbygoogle = window.adsbygoogle || []).push({
-          google_ad_client: "ca-pub-6796132485841062",
-          enable_page_level_ads: true
-     });
-</script>
 </head>
 <body>
 <?php
