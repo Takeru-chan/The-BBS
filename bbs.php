@@ -1,137 +1,83 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang='ja'>
 <head>
 <meta charset='utf-8'>
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>The BBS! - phpで書いた簡易掲示板です。</title>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 <style>
-body{ padding:1em; }
 .content { border:solid 1px #eee; padding:1em; }
 .user { text-align:right; }
 li { margin-bottom:1em; }
-textarea { width:100%; height:10em;font-size:medium;padding:1em; }
-.selector-for-some-widget { box-sizing: content-box; }
+textarea { width:100%; height:20em;font-size:medium; }
 </style>
 </head>
 <body>
+<h1>The BBS!</h1>
+<p>phpで書いた超簡易掲示板システムです。htmlタグなどは機能しません。</p>
 <?php
-$uri = explode('?',$_SERVER['REQUEST_URI'])[0];
 $mode = $_GET['mode'];
-$titlecode = <<< TC
-  <h1><a href="{$uri}">The BBS!</a></h1>
-  <p>phpで書いた超簡易掲示板システムです。htmlタグなどは機能しません。</p>
-  <p><a href="{$uri}?mode=notice">IPアドレスとユーザーエージェントの取得について</a></p>
-TC;
+$sep = '"';
+$uri = explode('?',$_SERVER['REQUEST_URI'])[0];
 $newpostcode = <<< NPC
   <form action="{$uri}" method="post">
   <p>なまえ：<input type="text" name="user" size="20" /></p>
   <p>コメント：</p><textarea name="content" class="textbox" /></textarea>
   <p>パスワード：<input type="password" name="pass" size="20" /> <input type="submit" value="書き込み" /></p>
-  <p>なまえとコメントのいずれか、または両方が空欄の場合、投稿はキャンセルされます。</p>
-  <input type="hidden" name="db" value="entry" /></form>
+  </form>
 NPC;
 $singlepostcode = <<< SPC
-  <form action="{$uri}" method="post">[IP/UA] {$_POST["remote"]}/{$_POST["agent"]} 
-  <p>パスワード：<input type="password" name="pass" size="20" /> 
-  <nobr><input type="submit" name="action" value="変更" /> 
-  <input type="submit" name="action" value="削除" /></nobr></p>
-  <p><textarea name="content" class="textbox my-3" />{$_POST["content"]}</textarea></p>
-  <p class="user">{$_POST["date"]}<br>Witten by {$_POST["user"]}</p>
-  <input type="hidden" name="id" value="{$_POST['id']}" /><input type="hidden" name="db" value="modify" /></form>
+  <form action="{$uri}">[IP/UA] {$_POST["remote"]}/{$_POST["agent"]} <input type="submit" value="一覧表示" />
+  <p><textarea name="content" class="textbox" />{$_POST["content"]}</textarea></p>
+  <p class="user">{$_POST["date"]} - {$_POST["time"]}<br>Witten by {$_POST["user"]}</p></form>
 SPC;
-$notice = <<< NOTE
-  <h2>IPアドレスとユーザーエージェントの取得について</h2>
-  <p>投稿ごとに表示されている[IP/UA]に続くそれぞれ８桁の文字列は、IPアドレスとユーザーエージェントから生成された、そこそこ固有の文字列です。</p>
-  <p>したがってこれらを照合することで、なりすましをそれなりに見破ることができるわけですが、裏を返せばこのサイトではIPアドレスとユーザーエージェントを取得しているということです。</p>
-  <p>これらは個人を特定できるような情報ではありませんが、IPアドレスは例えばあなたが使っているプロバイダや会社のネットワークを特定することができるかもしれませんし、ユーザーエージェントはあなたが使っているOSやブラウザの種類を特定することができるかもしれません。</p>
-  <p>まぁそういうことです。</p>
-NOTE;
-print($titlecode);
-date_default_timezone_set('Asia/Tokyo');
-$currDatetime = new Datetime();
 if ($mode == 'newpost') {
   print($newpostcode);
 } elseif ($mode == 'single') {
   print($singlepostcode);
-} elseif ($mode == 'notice') {
-  print($notice);
 } else {
-  if ($_POST['db'] == 'entry' && $_POST['user'] != '' && $_POST['content'] != '') {
-    $user = urlencode($_POST['user']);
-    $content = urlencode(htmlspecialchars($_POST['content'],ENT_QUOTES));
-    $sql = 'insert into posts (alive,created,user,passwd,remote,agent,content) values (1,"';
-    $sql .= $currDatetime->format('Y-m-d H:i:s.u').'","'.$user.'","';
-    $sql .= hash('sha256',$_POST['pass']).'","'.$_SERVER['REMOTE_ADDR'].'","';
-    $sql .= htmlspecialchars($_SERVER['HTTP_USER_AGENT'],ENT_QUOTES).'","'.$content.'")';
-    $mysqli = new mysqli('localhost','bbs',"7jyD)m6'",'bbs');
-    $mysqli->set_charset('utf8');
-    if ($mysqli->connect_error) {
-      echo $mysqli->connect_error;
-      exit();
-    } else {
-      $mysqli->query($sql);
-      $mysqli->close();
-    }
-  } elseif ($_POST['db'] == 'modify') {
-    $content = urlencode(htmlspecialchars($_POST['content'],ENT_QUOTES));
-    if ($_POST['action'] == '変更') {
-      $sql = 'update posts set content = "'.$content.'" where id = '.$_POST['id'];
-    } elseif ($_POST['action'] == '削除') {
-      $sql = 'update posts set alive = 0 where id = '.$_POST['id'];
-    }
-    $mysqli = new mysqli('localhost','bbs',"7jyD)m6'",'bbs');
-    $mysqli->set_charset('utf8');
-    if ($mysqli->connect_error) {
-      echo $mysqli->connect_error;
-      exit();
-    } else {
-      if ($result = $mysqli->query($sql)) {;
-        $mysqli->close();
-      } else {
-        print($result);
-      }
+  date_default_timezone_set('Asia/Tokyo');
+  $currDatetime = new Datetime();
+  print('<form action="'.$uri.'?mode=newpost" method="post"><input type="submit" value="新規書き込み" /></form>');
+  print('<ol>');
+  $line = file(__DIR__ . "/bbs.txt", FILE_IGNORE_NEW_LINES);
+  foreach ($line as $value) {
+    if ($value != null) {
+      $parts = explode($sep,$value);
+      $date[] = $parts[0];
+      $time[] = $parts[1];
+      $user[] = $parts[2];
+      $pass[] = $parts[3];
+      $content[] = $parts[4];
+      $remote[] = $parts[5];
+      $agent[] = $parts[6];
     }
   }
-  $sql = 'select id,created,lastmodified,user,email,passwd,remote,agent,content from posts';
-  $sql .= ' where alive = 1 order by created desc';
-  $mysqli = new mysqli('localhost','bbs',"7jyD)m6'",'bbs');
-  $mysqli->set_charset('utf8');
-  if ($mysqli->connect_error) {
-    echo $mysqli->connect_error;
-    exit();
-  } else {
-    if ($result = $mysqli->query($sql)) {
-      print('<form action="'.$uri.'?mode=newpost" method="post"><input type="submit" value="新規書き込み" /></form>');
-      while ($row = $result->fetch_assoc()) {
-        $remote = hash('crc32b',$row["remote"]);
-        $agent = hash('crc32b',$row["agent"]);
-        $user = urldecode($row['user']);
-        $content = urldecode($row['content']);
-        $view = nl2br($content);
+  if ($_POST['content'] != null) {
+    $date[] = $currDatetime->format('Y/m/d');
+    $time[] = $currDatetime->format('H:i:s.u');
+    $user[] = $_POST['user'];
+    $pass[] = hash('sha256',$_POST['pass']);
+    $content[] = str_replace(array("\r\n","\r","\n"),"",nl2br(htmlspecialchars($_POST['content'],ENT_QUOTES)));
+    $remote[] = hash('crc32b',$_SERVER["REMOTE_ADDR"]);
+    $agent[] = hash('crc32b',$_SERVER["HTTP_USER_AGENT"]);
+    file_put_contents(__DIR__.'/bbs.txt',"\n".$date[count($date)-1].$sep.$time[count($time)-1].$sep.$user[count($user)-1].$sep.$pass[count($pass)-1].$sep.$content[count($content)-1].$sep.$remote[count($remote)-1].$sep.$agent[count($agent)-1], FILE_APPEND);
+  }
+  for ($i=count($content);$i>0;$i--) {
 $looppostcode = <<< LPC
-  <div class="card card-light my-3"><div class="card-header">
-  <form action="{$uri}?mode=single" method="post"><div class="float-left">[IP/UA] {$remote}/{$agent}</div>
-  <div class="float-right"><input type="submit" value="編集/削除" /></div>
-  <input type="hidden" name="date" value="{$row['created']}" />
-  <input type="hidden" name="id" value="{$row['id']}" />
-  <input type="hidden" name="user" value="{$user}" />
-  <input type="hidden" name="pass" value="{$row['passwd']}" />
-  <input type="hidden" name="content" value="{$content}" />
-  <input type="hidden" name="remote" value="{$remote}" />
-  <input type="hidden" name="agent" value="{$agent}" /></form></div>
-  <p class="card-body">{$view}</p>
-  <div class="card-footer bg-transparent text-secondary">
-  <div class="user float-left">{$row['created']}</div><div class="float-right">Witten by {$user}</div>
-  </div>
-  </div>
+  <li><form action="{$uri}?mode=single" method="post">[IP/UA] {$remote[$i-1]}/{$agent[$i-1]} 
+  <input type="submit" value="投稿表示" /> <input type="hidden" name="date" value="{$date[$i-1]}" />
+  <input type="hidden" name="time" value="{$time[$i-1]}" />
+  <input type="hidden" name="user" value="{$user[$i-1]}" />
+  <input type="hidden" name="pass" value="{$pass[$i-1]}" />
+  <input type="hidden" name="content" value="{$content[$i-1]}" />
+  <input type="hidden" name="remote" value="{$remote[$i-1]}" />
+  <input type="hidden" name="agent" value="{$agent[$i-1]}" /></form>
+  <p class="content">{$content[$i-1]}</p>
+  <p class="user">{$date[$i-1]} - {$time[$i-1]}<br>Witten by {$user[$i-1]}</p></li>
 LPC;
-        print($looppostcode);
-      }
-    }
-    $result->close();
+    print($looppostcode);
   }
-  $mysqli->close();
+  print('</ol>');
 }
 ?>
 </body>

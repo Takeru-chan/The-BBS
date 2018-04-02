@@ -7,5 +7,5 @@ PHP7.xが動作する任意のサーバー上にプログラムファイルbbs.p
 少なくともbbs.txtはWebサーバーのユーザーに対して読み書き可能にしておく必要があります。  
 
 ## License
-This script has released under the MIT license.
+This script has released under the MIT license.  
 [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT)
